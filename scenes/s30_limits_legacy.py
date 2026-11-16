@@ -11,7 +11,7 @@ def grid(n, size=2.6):
     return g
 
 
-class S21LimitsLegacy(Scene):
+class S30LimitsLegacy(Scene):
     def construct(self):
         lt = T("한계", 32, bold=True, color=RED_C).move_to([-3.6, 3.2, 0])
         rt = T("의의", 32, bold=True, color=AC).move_to([3.6, 3.2, 0])

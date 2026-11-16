@@ -6,7 +6,7 @@ H = 8
 HEAD_COLORS = color_gradient([ManimColor(AC), ManimColor("#C86BFF")], H)
 
 
-class S15MultiHeadFormula(Scene):
+class S19MultiHeadFormula(Scene):
     def construct(self):
         f1 = M(f"head<sub>i</sub> = Attention({c('QW<sub>i</sub><sup>Q</sup>', QC)}, "
                f"{c('KW<sub>i</sub><sup>K</sup>', KC)}, {c('VW<sub>i</sub><sup>V</sup>', VC)})", size=36).move_to(UP * 3.2)

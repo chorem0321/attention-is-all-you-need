@@ -8,7 +8,7 @@ W = [0.04, 0.52, 0.03, 0.04, 0.03, 0.12, 0.05, 0.05, 0.04, 0.06, 0.02]
 IT = 7
 
 
-class S05WhyAttention(Scene):
+class S09WhyAttention(Scene):
     def construct(self):
         toks = VGroup(*[T(w, 30) for w in WORDS]).arrange(RIGHT, buff=0.32, aligned_edge=DOWN)
         toks.move_to(DOWN * 0.6)

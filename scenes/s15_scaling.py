@@ -7,7 +7,7 @@ RAW = np.array([24.0, 16.0, 8.0, 0.0])  # d_k 가 클 때의 큰 score 예시
 SCALED = RAW / np.sqrt(DK)  # [3, 2, 1, 0]
 
 
-class S11Scaling(Scene):
+class S15Scaling(Scene):
     def construct(self):
         # 근거 (논문 각주 4)
         l1 = M(f"{c('q', QC)}, {c('k', KC)} 성분 ~ 평균 0, 분산 1 (독립)", size=28).move_to([-3.3, 3.2, 0])

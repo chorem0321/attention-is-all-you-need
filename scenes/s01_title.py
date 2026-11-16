@@ -18,7 +18,7 @@ class S01Title(Scene):
 
         title = T("Attention Is All You Need", 66, bold=True).shift(UP * 1.2)
         sub = T("Vaswani et al.  ·  NeurIPS 2017", 32, GREY_A).next_to(title, DOWN, 0.45)
-        rev = T("논문 리뷰  ·  발표: Junsu", 30, AC).next_to(sub, DOWN, 0.35)
+        rev = T("논문 리뷰  ·  Transformer 1팀", 30, AC).next_to(sub, DOWN, 0.35)
 
         self.play(Write(title), run_time=2)
         self.play(FadeIn(sub, shift=UP * 0.2), run_time=0.8)

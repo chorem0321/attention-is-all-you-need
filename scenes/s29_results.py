@@ -10,7 +10,7 @@ def stat(big, unit, sub, color):
     return VGroup(b, u, s)
 
 
-class S20Results(Scene):
+class S29Results(Scene):
     def construct(self):
         # ── BLEU (논문 Table 2, newstest2014) ─────────
         de_t = T("WMT14 EN→DE", 24, bold=True)

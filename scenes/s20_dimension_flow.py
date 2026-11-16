@@ -11,7 +11,7 @@ def blk(cols, color, label, dims, op=0.35, w=None):
     return mat(w if w else cols * U, RH, color, label, dims, size=22, op=op)
 
 
-class S16DimensionFlow(Scene):
+class S20DimensionFlow(Scene):
     def construct(self):
         y1, y2 = 1.6, -1.4
         X = blk(512, XC, "X", "4 × 512").move_to([-5.4, y1, 0])
@@ -45,9 +45,19 @@ class S16DimensionFlow(Scene):
                                    fill_color=AC, fill_opacity=0.25 + 0.06 * i) for i in range(8)]).arrange(RIGHT, buff=0)
         heads.move_to([-3.6, y2, 0])
         hlab = T("Concat(head1..8)\n4 × (8·64) = 4 × 512", 18, GREY_A).next_to(heads, DOWN, 0.15)
-        a4 = CurvedArrow(ho.get_bottom() + DOWN * 0.1, heads.get_top() + UP * 0.1 + RIGHT * 1.0, angle=-PI / 4,
-                         color=GREY_B, stroke_width=2.5)
-        self.play(Create(a4), run_time=0.6)
+        # 두 줄 사이 빈 통로(y = -0.15)로만 지나가는 꺾은 화살표 → 도형을 가리지 않음
+        ych = -0.15
+        p0 = np.array([ho.get_x(), ho[2].get_bottom()[1] - 0.12, 0])
+        p1 = np.array([ho.get_x(), ych, 0])
+        p2 = np.array([heads.get_x(), ych, 0])
+        p3 = heads.get_top() + UP * 0.08
+        path = VMobject(stroke_color=GREY_B, stroke_width=2.5).set_points_as_corners([p0, p1, p2])
+        tip = Arrow(p2, p3, buff=0, stroke_width=2.5, color=GREY_B, tip_length=0.15,
+                    max_tip_length_to_length_ratio=0.5)
+        h8 = T("× 8 heads (병렬)", 18, AC).next_to((p1 + p2) / 2, UP, 0.1)
+        a4 = VGroup(path, tip)
+        self.play(Create(path), FadeIn(h8), run_time=0.6)
+        self.play(GrowArrow(tip), run_time=0.3)
         self.play(LaggedStart(*[TransformFromCopy(ho[0], h) for h in heads], lag_ratio=0.12), FadeIn(hlab),
                   run_time=1.6)
 

@@ -158,3 +158,75 @@ def pad_to(scene, seconds):
     remain = seconds - scene.renderer.time
     if remain > 0.05:
         scene.wait(remain)
+
+
+# ── 8단계 파이프라인 (s04 로드맵, s31 정리에서 공유) ─────────────────────
+PIPE = [("1", "Tokenize + Embedding", EC),
+        ("2", "+ Positional Encoding", AC),
+        ("3", "Multi-Head Self-Attention", QC),
+        ("4", "Add & Norm ①", NC),
+        ("5", "FFN 512→2048→512", FFC),
+        ("6", "Add & Norm ②", NC),
+        ("7", "Stack × N (=6)", KC),
+        ("8", "Output: Linear + Softmax", VC)]
+# 뱀 모양 배치: 윗줄 1→4, 아랫줄 5(4 아래)←8(1 아래). 3·4·5·6 이 오른쪽 2×2 = Encoder Block
+PIPE_POS = [(-4.95, 1.0), (-1.65, 1.0), (1.65, 1.0), (4.95, 1.0),
+            (4.95, -1.2), (1.65, -1.2), (-1.65, -1.2), (-4.95, -1.2)]
+
+
+def pipe_box(i, sub=None, w=2.9, h=1.05):
+    num, name, col = PIPE[i]
+    r = RoundedRectangle(corner_radius=0.12, width=w, height=h, fill_color="#141418", fill_opacity=1,
+                         stroke_color=col, stroke_width=2.2)
+    badge = Circle(0.2, fill_color=col, fill_opacity=1, stroke_width=0).move_to(r.get_corner(UL) + RIGHT * 0.3 + DOWN * 0.3)
+    bn = T(num, 18, BLACK, bold=True).move_to(badge)
+    t = T(name, 19, col, bold=True)
+    if t.width > w - 0.7:
+        t.scale_to_fit_width(w - 0.7)
+    g = VGroup(r, badge, bn, t)
+    if sub:
+        s = T(sub, 15, GREY_A)
+        if s.width > w - 0.3:
+            s.scale_to_fit_width(w - 0.3)
+        t.move_to(r).shift(UP * 0.2 + RIGHT * 0.15)
+        s.move_to(r).shift(DOWN * 0.24)
+        g.add(s)
+    else:
+        t.move_to(r).shift(RIGHT * 0.15)
+    g.move_to([*PIPE_POS[i], 0])
+    return g
+
+
+def pipe_arrows(boxes):
+    arr = VGroup()
+    for i in range(len(boxes) - 1):
+        a, b = boxes[i], boxes[i + 1]
+        if i < 3:
+            s, e = a.get_right(), b.get_left()
+        elif i == 3:
+            s, e = a.get_bottom(), b.get_top()
+        else:
+            s, e = a.get_left(), b.get_right()
+        arr.add(Arrow(s, e, buff=0.06, stroke_width=3, color=GREY_B, tip_length=0.15,
+                      max_tip_length_to_length_ratio=0.4))
+    return arr
+
+
+def vbar(vals, origin, w=0.28, gap=0.06, scale=0.6, color=XC, neg_color=None):
+    """기준선 위/아래로 뻗는 막대(음수 가능). 반환 VGroup(base, bars)"""
+    origin = np.array(origin, dtype=float)
+    bars = VGroup()
+    for i, v in enumerate(vals):
+        h = max(abs(v) * scale, 0.02)
+        r = Rectangle(width=w, height=h, stroke_width=0, fill_opacity=0.9,
+                      fill_color=color if v >= 0 or neg_color is None else neg_color)
+        r.move_to(origin + RIGHT * (i * (w + gap) + w / 2) + UP * (h / 2 if v >= 0 else -h / 2))
+        bars.add(r)
+    total = len(vals) * (w + gap) - gap
+    base = Line(origin + LEFT * 0.1, origin + RIGHT * (total + 0.1), color=GREY_B, stroke_width=1.5)
+    return VGroup(base, bars)
+
+
+def plus_node(pt, r=0.2):
+    return VGroup(Circle(r, color=WHITE, stroke_width=2),
+                  Line(UP * r * 0.6, DOWN * r * 0.6), Line(LEFT * r * 0.6, RIGHT * r * 0.6)).move_to(pt)

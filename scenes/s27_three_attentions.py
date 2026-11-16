@@ -14,13 +14,13 @@ def col(x, y_top, color, labels, gap=0.75):
     return dots, ls
 
 
-class S18ThreeAttentions(Scene):
+class S27ThreeAttentions(Scene):
     def construct(self):
         xs = [-4.7, 0.0, 4.7]
         titles = ["Encoder self-attention", "Decoder masked self-attention", "Encoder–Decoder attention"]
         subs = ["Q, K, V 모두 인코더 (입력 문장)", "Q, K, V 모두 디코더, 미래 차단", "Q = 디코더,  K, V = 인코더 출력"]
-        src = ["I", "love", "ML", "."]
-        tgt = ["<s>", "나는", "ML을", "좋아해"]
+        src = ["Allen", "walks", "dog", "."]
+        tgt = ["<s>", "앨런이", "개를", "산책시킨다"]
         panels = VGroup(*[RoundedRectangle(corner_radius=0.15, width=4.4, height=5.6, stroke_color=GREY_D,
                                            stroke_width=2).move_to([x, -0.35, 0]) for x in xs])
         ttl = VGroup(*[T(t, 20, bold=True).next_to(p, UP, 0.0).shift(DOWN * 0.45) for t, p in zip(titles, panels)])

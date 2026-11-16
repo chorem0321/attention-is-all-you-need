@@ -11,7 +11,7 @@ def card(title, desc, color):
     return VGroup(r, t, d)
 
 
-class S09QKV(Scene):
+class S13QKV(Scene):
     def construct(self):
         head = T("검색 시스템 비유", 26, GREY_A).move_to(UP * 3.4)
         cards = VGroup(card("Query", "검색어: 내가 찾는 것", QC),

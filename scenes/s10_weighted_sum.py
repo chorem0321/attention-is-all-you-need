@@ -10,7 +10,7 @@ def vcol(color, n=5, cell=0.34, op=0.8):
                     .shift(DOWN * i * cell) for i in range(n)])
 
 
-class S06WeightedSum(Scene):
+class S10WeightedSum(Scene):
     def construct(self):
         a = lambda i: c(f"α<sub>{i}</sub>", AC)
         v = lambda i: c(f"V<sub>{i}</sub>", VC)

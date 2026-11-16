@@ -5,7 +5,7 @@ from common import *
 COLS = ["animal", "street", "tired"]
 
 
-class S13OneHead(Scene):
+class S17OneHead(Scene):
     def construct(self):
         q = T("Query:  it", 34, QC, bold=True).move_to([-4.2, 2.6, 0])
         need = VGroup(T("필요한 정보 1:  '누구'인가? → animal", 24),

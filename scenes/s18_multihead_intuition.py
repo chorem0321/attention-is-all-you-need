@@ -7,7 +7,7 @@ H1 = np.array([[0.80, 0.10, 0.10]])
 H2 = np.array([[0.10, 0.10, 0.80]])
 
 
-class S14MultiHeadIntuition(Scene):
+class S18MultiHeadIntuition(Scene):
     def construct(self):
         q = T("Query:  it", 30, QC, bold=True).move_to(UP * 3.1)
         self.play(FadeIn(q))

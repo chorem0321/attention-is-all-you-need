@@ -17,7 +17,7 @@ AM = softmax(SM, axis=1)
 PIECES = [17, 8, 3, 4, 1, 1]
 
 
-class S12ScaledDotProduct(Scene):
+class S16ScaledDotProduct(Scene):
     def construct(self):
         eq = M(f"Attention({c('Q', QC)}, {c('K', KC)}, {c('V', VC)}) = "
                f"{c('softmax(', AC)} {c('Q', QC)}{c('K<sup>T</sup>', KC)} / √d<sub>k</sub> {c(')', AC)} {c('V', VC)}",

@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import *
 
 
-class S07AverageVsHard(Scene):
+class S11AverageVsHard(Scene):
     def construct(self):
         # 왼쪽: Average
         lt = T("Average", 32, bold=True).move_to([-3.5, 3.1, 0])

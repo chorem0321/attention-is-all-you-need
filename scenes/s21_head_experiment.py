@@ -9,7 +9,7 @@ BLEU = [24.9, 25.5, 25.8, 25.8, 25.4]
 YMIN, YMAX = 24.5, 26.0
 
 
-class S17HeadExperiment(Scene):
+class S21HeadExperiment(Scene):
     def construct(self):
         x0, y0 = -6.0, -2.3
         W, Hh = 6.6, 4.4

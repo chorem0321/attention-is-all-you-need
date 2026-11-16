@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import *
 
 
-class S08SoftSelection(Scene):
+class S12SoftSelection(Scene):
     def construct(self):
         org = [-5.6, -0.2, 0]
         hard = barchart([0, 1, 0], origin=org, w=0.7, gap=0.4, max_h=2.6, labels=["V1", "V2", "V3"])

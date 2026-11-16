@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import *
 
 
-class S10DotProduct(Scene):
+class S14DotProduct(Scene):
     def construct(self):
         f1 = M(f"score({c('q', QC)}, {c('k', KC)}) = {c('q', QC)} · {c('k', KC)} = "
                f"Σ<sub>i</sub> {c('q<sub>i</sub>', QC)}{c('k<sub>i</sub>', KC)}", size=34).move_to([-3.4, 2.9, 0])
