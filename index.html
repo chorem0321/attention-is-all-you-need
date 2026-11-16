@@ -31,7 +31,7 @@
     position: relative;
     container-type: size;
     overflow: hidden;
-    touch-action: pan-y;
+    touch-action: none;
   }
   .slide { position: absolute; inset: 0; display: none; padding: 2.2cqw 3cqw 3.6cqw; }
   .slide.active { display: flex; flex-direction: column; }
@@ -358,25 +358,31 @@ function show(i) {
   if (location.hash !== `#${cur + 1}`) history.replaceState(null, "", `#${cur + 1}`);
 }
 
-$("#stage").addEventListener("touchstart", (e) => {
-  if (e.touches.length !== 1) {
+function startSwipe(e) {
+  if (!e.isPrimary || (e.pointerType && e.pointerType !== "touch" && e.pointerType !== "pen")) {
     swipeTracking = false;
     return;
   }
-  swipeStartX = e.touches[0].clientX;
-  swipeStartY = e.touches[0].clientY;
+  swipeStartX = e.clientX;
+  swipeStartY = e.clientY;
   swipeTracking = true;
-}, { passive: true });
+  if (e.currentTarget.setPointerCapture) {
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+}
 
-$("#stage").addEventListener("touchend", (e) => {
-  if (!swipeTracking || e.changedTouches.length !== 1) return;
+function endSwipe(e) {
+  if (!swipeTracking) return;
   swipeTracking = false;
-  const touch = e.changedTouches[0];
-  const dx = touch.clientX - swipeStartX;
-  const dy = touch.clientY - swipeStartY;
+  const dx = e.clientX - swipeStartX;
+  const dy = e.clientY - swipeStartY;
   if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
   show(cur + (dx < 0 ? 1 : -1));
-}, { passive: true });
+}
+
+$("#stage").addEventListener("pointerdown", startSwipe);
+$("#stage").addEventListener("pointerup", endSwipe);
+$("#stage").addEventListener("pointercancel", () => { swipeTracking = false; });
 
 document.addEventListener("keydown", (e) => {
   if (e.altKey || e.ctrlKey || e.metaKey) return;
