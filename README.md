@@ -67,6 +67,7 @@ python transformer_ppt.py -j 1       # 메모리가 부족하면 직렬로
 | `→` `Space` `PageDown` `Enter` | 다음 |
 | `←` `PageUp` `Backspace` | 이전 |
 | `Home` / `End` | 처음 / 마지막 |
+| 화면 가로 스와이프 | 오른쪽: 이전 · 왼쪽: 다음 |
 | `S` | 발표자 노트 열기/닫기 |
 | `R` | 현재 영상 처음부터 다시 |
 | `F` | 전체화면 |

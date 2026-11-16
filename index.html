@@ -31,6 +31,7 @@
     position: relative;
     container-type: size;
     overflow: hidden;
+    touch-action: pan-y;
   }
   .slide { position: absolute; inset: 0; display: none; padding: 2.2cqw 3cqw 3.6cqw; }
   .slide.active { display: flex; flex-direction: column; }
@@ -330,6 +331,11 @@ SLIDES.forEach((s, i) => {
 });
 
 let cur = 0;
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeTracking = false;
+const SWIPE_THRESHOLD = 48;
+
 function show(i) {
   i = Math.max(0, Math.min(N - 1, i));
   const els = root.children;
@@ -351,6 +357,26 @@ function show(i) {
   $("#bar > div").style.width = `${((cur + 1) / N) * 100}%`;
   if (location.hash !== `#${cur + 1}`) history.replaceState(null, "", `#${cur + 1}`);
 }
+
+$("#stage").addEventListener("touchstart", (e) => {
+  if (e.touches.length !== 1) {
+    swipeTracking = false;
+    return;
+  }
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+  swipeTracking = true;
+}, { passive: true });
+
+$("#stage").addEventListener("touchend", (e) => {
+  if (!swipeTracking || e.changedTouches.length !== 1) return;
+  swipeTracking = false;
+  const touch = e.changedTouches[0];
+  const dx = touch.clientX - swipeStartX;
+  const dy = touch.clientY - swipeStartY;
+  if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
+  show(cur + (dx < 0 ? 1 : -1));
+}, { passive: true });
 
 document.addEventListener("keydown", (e) => {
   if (e.altKey || e.ctrlKey || e.metaKey) return;
