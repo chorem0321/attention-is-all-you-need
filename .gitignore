@@ -1,0 +1,9 @@
+# 원문 PDF는 재배포하지 않음
+*.pdf
+
+# manim 중간 산출물 (최종 영상은 media/slides/ 만 커밋)
+media/*
+!media/slides/
+media/slides/render_report.json
+__pycache__/
+*.pyc

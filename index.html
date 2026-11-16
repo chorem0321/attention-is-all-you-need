@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention Is All You Need — 논문 리뷰</title>
+<style>
+  :root {
+    --bg: #000;
+    --stage: #07070a;
+    --fg: #f2f2f2;
+    --muted: #9a9aa2;
+    --line: #26262c;
+    --q: #FFD84D;   /* Query  */
+    --k: #4DA3FF;   /* Key    */
+    --v: #5BD17A;   /* Value  */
+    --a: #FF9A3C;   /* Attention weight */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; }
+  body {
+    font-family: "Pretendard", "Pretendard Variable", "Malgun Gothic", "맑은 고딕",
+                 "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    display: grid; place-items: center;
+  }
+  /* 16:9 스테이지 — 모든 크기는 cqw(스테이지 폭의 1%) 기준 */
+  #stage {
+    width: min(100vw, calc(100vh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    background: var(--stage);
+    position: relative;
+    container-type: size;
+    overflow: hidden;
+  }
+  .slide { position: absolute; inset: 0; display: none; padding: 2.2cqw 3cqw 3.6cqw; }
+  .slide.active { display: flex; flex-direction: column; }
+  .slide h1 {
+    margin: 0 0 1.4cqw; font-size: 2.5cqw; font-weight: 700; letter-spacing: -0.02em;
+    display: flex; align-items: baseline; gap: 1.2cqw;
+  }
+  .slide h1 .no { color: var(--a); font-size: 1.6cqw; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .body { flex: 1; display: grid; grid-template-columns: 66cqw 1fr; gap: 2.2cqw; min-height: 0; }
+  .vid {
+    position: relative; width: 66cqw; aspect-ratio: 16 / 9; background: #000;
+    border: 1px solid var(--line); border-radius: 0.6cqw; overflow: hidden; align-self: start;
+  }
+  .vid video { width: 100%; height: 100%; display: block; object-fit: contain; background: #000; }
+  .vid .missing {
+    position: absolute; inset: 0; display: none; place-items: center; text-align: center;
+    color: var(--muted); font-size: 1.3cqw; line-height: 1.6; padding: 2cqw;
+  }
+  .vid.error .missing { display: grid; }
+  .vid.error video { visibility: hidden; }
+  ul.pts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.1cqw; }
+  ul.pts li {
+    font-size: 1.32cqw; line-height: 1.5; color: var(--fg);
+    padding-left: 1.4cqw; position: relative; word-break: keep-all;
+  }
+  ul.pts li::before {
+    content: ""; position: absolute; left: 0; top: 0.6cqw; width: 0.55cqw; height: 0.55cqw;
+    border-radius: 50%; background: var(--a);
+  }
+  .q { color: var(--q); } .k { color: var(--k); } .v { color: var(--v); } .a { color: var(--a); }
+  /* 표지 / 정리 등 bullet 없는 슬라이드 */
+  .slide.full { padding: 1.6cqw 3cqw 3.6cqw; }
+  .slide.full h1 { display: none; }
+  .slide.full .body { grid-template-columns: 1fr; place-items: center; }
+  .slide.full .vid { width: 84cqw; }
+  .slide.full ul.pts { display: none; }
+
+  /* 하단 진행 바 + 페이지 */
+  #bar { position: absolute; left: 0; right: 0; bottom: 0; height: 0.35cqw; background: var(--line); }
+  #bar > div { height: 100%; width: 0; background: var(--a); transition: width .25s ease; }
+  #page {
+    position: absolute; right: 2cqw; bottom: 1cqw; font-size: 1.05cqw; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  #hint { position: absolute; left: 3cqw; bottom: 1cqw; font-size: 0.95cqw; color: #55555c; }
+  kbd {
+    font-family: inherit; border: 1px solid #3a3a42; border-bottom-width: 2px; border-radius: 0.3cqw;
+    padding: 0 0.35cqw; font-size: 0.85cqw; color: #8a8a92;
+  }
+
+  /* 발표자 노트 */
+  #notes {
+    position: absolute; left: 0; right: 0; bottom: 3.2cqw; max-height: 34%;
+    background: rgba(14, 14, 18, 0.96); border-top: 1px solid #3a3a42;
+    padding: 1.4cqw 3cqw 1.6cqw; font-size: 1.35cqw; line-height: 1.65; color: #e6e6ea;
+    transform: translateY(120%); opacity: 0; transition: transform .22s ease, opacity .22s ease;
+    overflow-y: auto; word-break: keep-all; pointer-events: none;
+  }
+  #notes.open { transform: none; opacity: 1; pointer-events: auto; }
+  #notes .lbl { color: var(--a); font-size: 1cqw; font-weight: 700; letter-spacing: .08em; margin-bottom: .5cqw; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="slides"></div>
+  <div id="notes"><div class="lbl">SPEAKER NOTES · S</div><div id="notes-text"></div></div>
+  <div id="hint"><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> 이동 · <kbd>S</kbd> 노트 · <kbd>R</kbd> 다시 재생 · <kbd>F</kbd> 전체화면</div>
+  <div id="page"></div>
+  <div id="bar"><div></div></div>
+</div>
+
+<script>
+const SLIDES = [
+  { t: "Attention Is All You Need", full: true, b: [],
+    n: "안녕하세요, 오늘 리뷰할 논문은 2017년 NeurIPS에 발표된 'Attention Is All You Need'입니다. RNN 없이 attention만으로 시퀀스를 처리하는 Transformer를 제안한 논문입니다. 직관에서 시작해 수식, 실험 결과 순서로 따라가 보겠습니다." },
+  { t: "배경: RNN / seq2seq 의 한계",
+    b: ["RNN은 토큰을 한 step씩 순차 처리 → 병렬화 불가",
+        "먼 토큰 사이 정보는 긴 경로를 거쳐야 함 → 장거리 의존성 학습이 어려움",
+        "Transformer: recurrence·convolution 없이 <span class='a'>attention만</span> 사용",
+        "모든 토큰 쌍을 한 번에 연결 (경로 길이 O(1))"],
+    n: "기존 seq2seq 모델은 이전 hidden state가 있어야 다음 계산을 할 수 있어서, 문장 길이만큼 순차적으로 돌아야 했습니다. 그래서 GPU 병렬화가 어렵고, 첫 단어와 마지막 단어 사이 정보는 여러 단계를 거쳐야 전달됩니다. Transformer는 recurrence를 완전히 버리고 attention으로 모든 토큰을 한 번에 연결합니다." },
+  { t: "전체 구조",
+    b: ["Encoder · Decoder 모두 N = 6 층 스택",
+        "입력 = Embedding + Positional Encoding",
+        "Encoder 층: Multi-Head Attention → Add&Norm → FFN → Add&Norm",
+        "Decoder 층: Masked MHA → Encoder-Decoder MHA → FFN (각각 Add&Norm)",
+        "모든 sublayer 출력 차원 d<sub>model</sub> = 512"],
+    n: "논문 Figure 1의 구조입니다. 입력 토큰은 임베딩에 위치 인코딩을 더해 들어가고, 인코더는 multi-head attention과 feed-forward 두 sublayer를 가진 층을 6번 쌓습니다. 디코더는 여기에 인코더 출력을 참조하는 attention이 하나 더 있어서 sublayer가 세 개입니다. 각 sublayer 뒤에는 residual 연결과 layer normalization이 붙습니다." },
+  { t: "Embedding",
+    b: ["토큰 → d<sub>model</sub> = 512 차원 벡터 (학습되는 lookup)",
+        "임베딩은 문맥과 무관: 같은 단어 = 같은 벡터",
+        "'river bank' vs 'bank account' 를 구분하지 못함",
+        "→ 주변 토큰을 참고해 표현을 다시 만들어야 함 = <span class='a'>Attention</span>"],
+    n: "먼저 단어는 임베딩 테이블을 통해 512차원 벡터로 바뀝니다. 그런데 이 벡터는 단어마다 고정이라서, 강가의 bank와 은행의 bank가 같은 벡터가 됩니다. 문맥에 맞는 표현을 얻으려면 문장 안의 다른 단어를 참고해야 하고, 그 장치가 attention입니다." },
+  { t: "왜 Attention 인가",
+    b: ["\"The animal didn't cross the street because <span class='q'>it</span> was tired.\"",
+        "it 이 가리키는 대상 = <span class='a'>animal</span>",
+        "it 의 새 표현 = 다른 토큰들의 가중합",
+        "가중치(선 굵기)가 클수록 더 많이 참고 · 값은 예시"],
+    n: "이 문장에서 it은 street가 아니라 animal을 가리킵니다. Attention은 it의 표현을 만들 때 문장의 모든 단어를 보되, animal에 큰 가중치를 주는 방식으로 이 문제를 풉니다. 화면의 선 굵기가 그 가중치이고, 값은 설명을 위한 예시입니다." },
+  { t: "Weighted Sum",
+    b: ["Output = <span class='a'>α₁</span><span class='v'>V₁</span> + … + <span class='a'>αₘ</span><span class='v'>Vₘ</span>",
+        "αᵢ ≥ 0,  Σ αᵢ = 1",
+        "큰 α 를 받은 Value 가 출력에 더 많이 반영",
+        "핵심 질문: α 를 어떻게 정할까?"],
+    n: "Attention의 출력은 결국 Value 벡터들의 가중합입니다. 가중치 α는 0 이상이고 합이 1이라서, 어떤 위치를 얼마나 참고할지의 비율로 볼 수 있습니다. 이제 남은 질문은 이 α를 어떻게 정하느냐입니다." },
+  { t: "Average vs Hard Selection",
+    b: ["Average: αᵢ = 1/m (0.25 × 4) → 모두 동일, 구분 없음",
+        "Hard: one-hot (0, 1, 0) → 하나만 선택, 나머지 버림",
+        "두 극단 사이 어딘가가 필요하다"],
+    n: "가장 단순한 방법은 모두에게 똑같이 1/m을 주는 평균인데, 그러면 무엇이 중요한지 전혀 구분하지 못합니다. 반대 극단은 하나만 고르는 hard selection으로, 나머지 정보를 모두 버립니다. 우리가 원하는 것은 이 두 극단 사이의 무언가입니다." },
+  { t: "Soft Selection",
+    b: ["(0.15, 0.70, 0.15): 가장 관련된 곳에 집중 + 나머지도 일부 반영",
+        "정보가 여러 위치에 분산된다",
+        "softmax → 어디서나 미분 가능 → 경사하강으로 바로 학습",
+        "Hard(argmax)는 미분 불가 → 학습이 까다로움 (REINFORCE 등으로 불가능은 아님)"],
+    n: "Soft selection은 가장 관련 있는 위치에 큰 비중을 주면서도 다른 위치의 정보도 조금씩 섞습니다. 무엇보다 softmax로 만든 가중치는 미분 가능해서 역전파로 바로 학습할 수 있습니다. Hard selection은 argmax 때문에 기울기가 0이라 학습이 까다롭지만, 강화학습 방식으로 학습하는 연구도 있어 불가능한 것은 아닙니다." },
+  { t: "Query · Key · Value",
+    b: ["<span class='q'>Query</span> = 검색어 (무엇을 찾나)",
+        "<span class='k'>Key</span> = 색인 (무엇과 매칭되나)",
+        "<span class='v'>Value</span> = 실제 문서 (가져올 내용)",
+        "<span class='q'>Q</span> = XW<sup>Q</sup>, <span class='k'>K</span> = XW<sup>K</sup>, <span class='v'>V</span> = XW<sup>V</sup> — 같은 X, 다른 투영"],
+    n: "가중치를 정하기 위해 검색 시스템 비유를 씁니다. Query는 검색어, Key는 문서의 색인, Value는 실제 내용이고, Query와 Key가 잘 맞을수록 그 Value를 많이 가져옵니다. self-attention에서는 같은 입력 X에 서로 다른 학습 행렬 세 개를 곱해 Q, K, V를 만듭니다." },
+  { t: "Dot Product Score",
+    b: ["score(<span class='q'>q</span>, <span class='k'>k</span>) = q · k = Σ qᵢkᵢ = |q||k| cos θ",
+        "방향이 비슷할수록(θ ↓) score ↑",
+        "추가 파라미터 없이 행렬곱 한 번 → 빠르고 메모리 효율적"],
+    n: "Query와 Key의 유사도는 내적으로 잽니다. 내적은 두 벡터 크기와 사이각 코사인의 곱이라서, 방향이 비슷할수록 점수가 커집니다. 논문은 additive attention 대신 이 dot-product를 써서, 최적화된 행렬곱으로 빠르게 계산합니다." },
+  { t: "Scaling: ÷ √d<sub>k</sub>",
+    b: ["q, k 성분이 평균 0 · 분산 1 이면 Var(q·k) = d<sub>k</sub>",
+        "d<sub>k</sub> ↑ → score 크기 ↑ → softmax 포화 (거의 one-hot)",
+        "포화 영역에서는 기울기 ≈ 0",
+        "÷ √d<sub>k</sub> 로 분산을 1 수준으로 → 부드러운 분포 유지"],
+    n: "d_k가 커지면 내적값의 분산이 d_k에 비례해 커집니다. 그러면 softmax가 거의 one-hot이 되어 기울기가 극히 작아집니다. 그래서 루트 d_k로 나눠 분산을 1 수준으로 맞추는데, 이것이 scaled dot-product의 의미입니다. 화면 예시는 d_k가 64라서 8로 나눈 경우입니다." },
+  { t: "Scaled Dot-Product Attention",
+    b: ["Attention(<span class='q'>Q</span>,<span class='k'>K</span>,<span class='v'>V</span>) = softmax(<span class='q'>Q</span><span class='k'>K</span>ᵀ / √d<sub>k</sub>) <span class='v'>V</span>",
+        "QKᵀ: 모든 Query–Key 쌍의 score (n × n)",
+        "softmax: 행마다 합이 1인 <span class='a'>가중치</span>",
+        "Decoder: 미래 위치를 −∞ 로 masking → softmax 후 0"],
+    n: "지금까지를 합치면 이 한 줄의 수식이 됩니다. QK transpose로 모든 쌍의 점수를 한꺼번에 구하고, 루트 d_k로 나눈 뒤 행 단위 softmax로 가중치를 만들어 V와 곱합니다. 디코더에서는 아직 생성되지 않은 미래 단어를 보면 안 되므로, softmax 전에 해당 위치를 마이너스 무한대로 바꿔 가중치를 0으로 만듭니다." },
+  { t: "하나의 Head 로 충분할까?",
+    b: ["Query 하나당 가중치 분포는 하나뿐",
+        "it → '누구'(animal) 와 '상태'(tired) 를 동시에 봐야 함",
+        "한 분포로 둘 다 보면 → 양쪽 모두 희석",
+        "→ 여러 관점을 병렬로: <span class='a'>Multi-Head</span>"],
+    n: "그런데 head가 하나면 Query 하나에 softmax 분포도 하나뿐입니다. it을 이해하려면 가리키는 대상인 animal과 상태인 tired를 모두 봐야 하는데, 한 분포로 둘 다 잡으려 하면 가중치가 나뉘어 둘 다 흐려집니다. 논문은 이를 single head에서는 averaging이 표현을 방해한다고 설명하고, 이것이 multi-head의 동기입니다." },
+  { t: "Multi-Head 직관",
+    b: ["Head 1: animal <span class='a'>0.80</span> / street 0.10 / tired 0.10",
+        "Head 2: animal 0.10 / street 0.10 / tired <span class='a'>0.80</span>",
+        "head 마다 독립적인 softmax → 서로 다른 관계를 동시에 포착",
+        "값은 설명용 예시"],
+    n: "head를 둘로 나누면 Head 1은 지시 대상인 animal에, Head 2는 상태인 tired에 각각 집중할 수 있습니다. 논문도 multi-head가 서로 다른 표현 부분공간의 정보를 동시에 참조하게 해 준다고 설명합니다. 다만 실제 head들이 이렇게 깔끔하게 역할을 나누는지는 뒤의 후속 연구에서 다시 보겠습니다." },
+  { t: "Multi-Head 수식",
+    b: ["headᵢ = Attention(<span class='q'>QWᵢ<sup>Q</sup></span>, <span class='k'>KWᵢ<sup>K</sup></span>, <span class='v'>VWᵢ<sup>V</sup></span>)",
+        "MultiHead(Q,K,V) = Concat(head₁, …, head<sub>h</sub>) W<sup>O</sup>",
+        "Concat · W<sup>O</sup> = Σᵢ Hᵢ Wᵢ<sup>O</sup> (블록 행렬곱)",
+        "W<sup>O</sup> 가 head 별 출력을 섞어 하나의 표현으로"],
+    n: "각 head는 자기만의 투영 행렬로 Q, K, V를 만든 뒤 scaled dot-product attention을 수행합니다. 그 결과를 이어 붙이고 W^O를 곱하는데, 블록 행렬곱으로 보면 각 head 출력에 W^O의 해당 행 블록을 곱해서 더한 것과 같습니다. 즉 W^O는 head들이 본 정보를 섞어 주는 역할입니다." },
+  { t: "차원 흐름 (n = 4, d<sub>model</sub> = 512, h = 8)",
+    b: ["X: 4×512 → head 별 <span class='q'>Q</span>/<span class='k'>K</span>/<span class='v'>V</span>: 4×64",
+        "QKᵀ: 4×4 → head 출력: 4×64",
+        "8개 concat: 4×512 → × W<sup>O</sup> (512×512) → 4×512",
+        "d<sub>k</sub> = d<sub>v</sub> = d<sub>model</sub>/h = 64 → 총 연산량 ≈ single-head"],
+    n: "토큰 4개, d_model 512, head 8개를 예로 차원을 따라가 보겠습니다. 각 head는 64차원으로 투영해 4×4 attention 행렬을 만들고 4×64 출력을 냅니다. 8개를 이어 붙이면 다시 512가 되고, W^O를 지나도 4×512가 유지됩니다. head별 차원을 줄였기 때문에 head 수를 늘려도 전체 연산량은 single-head와 비슷합니다." },
+  { t: "실험: Head 수 비교 (Table 3 A)",
+    b: ["h=1: 24.9 · h=4: 25.5 · h=8: <span class='a'>25.8</span> · h=16: <span class='a'>25.8</span> · h=32: 25.4",
+        "EN-DE dev set (newstest2013) BLEU, 연산량 고정",
+        "single-head 는 최고 대비 −0.9, 너무 많아도 하락",
+        "후속: Voita et al. 2019 · Michel et al. 2019 — 상당수 head 는 pruning 가능"],
+    n: "논문 Table 3의 (A) 행은 연산량을 고정한 채 head 수만 바꾼 실험입니다. head가 하나일 때는 최고 설정보다 0.9 BLEU 낮고, 8과 16에서 가장 좋으며, 32에서는 다시 떨어집니다. 이후 Voita와 Michel의 연구는 학습된 모델에서 상당수 head를 제거해도 성능이 크게 떨어지지 않는다는 것을 보였습니다. 참고로 이 값은 test가 아니라 dev set 점수입니다." },
+  { t: "Transformer 안의 3가지 Attention",
+    b: ["Encoder self-attention: Q·K·V 모두 인코더, 양방향",
+        "Decoder masked self-attention: 이전 위치만 참조",
+        "Encoder-Decoder attention: <span class='q'>Q</span> = 디코더, <span class='k'>K</span>·<span class='v'>V</span> = 인코더 출력",
+        "모두 같은 Multi-Head Attention 블록"],
+    n: "Transformer 안에서 multi-head attention은 세 가지로 쓰입니다. 인코더의 self-attention은 입력 문장의 모든 위치를 서로 참조하고, 디코더의 self-attention은 masking으로 이전 위치만 봅니다. 마지막으로 encoder-decoder attention은 디코더가 Query를 내고 인코더 출력을 Key와 Value로 써서, 번역할 때 원문의 어디를 볼지 정합니다." },
+  { t: "Positional Encoding · FFN · Residual/LayerNorm",
+    b: ["PE<sub>(pos,2i)</sub> = sin(pos / 10000<sup>2i/d<sub>model</sub></sup>), PE<sub>(pos,2i+1)</sub> = cos(…)",
+        "FFN(x) = max(0, xW₁ + b₁)W₂ + b₂,  d<sub>ff</sub> = 2048",
+        "각 sublayer: LayerNorm(x + Sublayer(x))",
+        "학습형 위치 임베딩도 결과는 거의 동일 (Table 3 E)"],
+    n: "attention 자체에는 순서 개념이 없어서, 차원마다 주파수가 다른 sin·cos 값을 임베딩에 더해 위치 정보를 넣습니다. 각 층에는 위치마다 똑같이 적용되는 2층 FFN이 있고, 중간 차원은 2048입니다. 그리고 모든 sublayer는 residual 연결 뒤 layer normalization을 거쳐서, 깊게 쌓아도 학습이 안정적입니다." },
+  { t: "결과",
+    b: ["WMT14 EN→DE <span class='a'>28.4</span> BLEU (기존 최고 대비 +2 이상)",
+        "WMT14 EN→FR <span class='a'>41.0</span> BLEU (단일 모델 SOTA)",
+        "P100 × 8: base 12시간, big 3.5일",
+        "Self-Attention: O(n²·d), 순차 연산 O(1), 최대 경로 O(1)"],
+    n: "big 모델은 영어-독일어 번역에서 28.4 BLEU로, 앙상블을 포함한 기존 최고 기록을 2 BLEU 이상 넘었습니다. 영어-프랑스어에서는 41.0으로 단일 모델 최고 기록을 세웠는데, arXiv 개정판에는 41.8로 적혀 있으니 참고해 주세요. 학습은 P100 8장으로 base 12시간, big 3.5일이면 충분해서 기존 모델보다 학습 비용이 훨씬 적습니다. 아래 표처럼 self-attention은 순차 연산 수와 최대 경로 길이가 모두 상수입니다." },
+  { t: "한계 & 의의",
+    b: ["attention 행렬 O(n²) 메모리·연산 → 긴 시퀀스에 부담",
+        "순서 정보가 구조에 없음 → Positional Encoding 으로 주입",
+        "BERT(Encoder) · GPT(Decoder) · ViT(이미지) 의 기반",
+        "현대 대규모 언어모델의 출발점"],
+    n: "한계도 있습니다. 모든 쌍을 비교하므로 시퀀스 길이의 제곱에 비례하는 메모리와 연산이 필요하고, 순서 정보는 위치 인코딩으로 따로 넣어 줘야 합니다. 그럼에도 이 구조는 BERT, GPT, ViT 같은 후속 모델의 기반이 되었고, 지금의 대규모 언어모델로 이어졌습니다." },
+  { t: "정리",
+    b: ["Weighted Sum → Soft Selection → <span class='q'>Q</span>/<span class='k'>K</span>/<span class='v'>V</span> → Dot Product → Scaling",
+        "→ Softmax → Scaled Dot-Product → Multi-Head → Concat → W<sup>O</sup>",
+        "감사합니다 · Q&amp;A"],
+    n: "정리하면 attention은 가중합에서 출발해, soft selection으로 가중치를 학습 가능하게 만들고, Q·K·V와 내적으로 점수를 구한 뒤 스케일링과 softmax로 안정적인 가중치를 만듭니다. 이를 여러 head로 병렬 수행하고 concat과 W^O로 합친 것이 multi-head attention입니다. 들어주셔서 감사합니다." },
+];
+
+const $ = (s) => document.querySelector(s);
+const root = $("#slides");
+const N = SLIDES.length;
+const pad = (i) => String(i).padStart(2, "0");
+const status = SLIDES.map(() => "pending");   // pending | loaded | playing | ended | error
+
+SLIDES.forEach((s, i) => {
+  const el = document.createElement("section");
+  el.className = "slide" + (s.full ? " full" : "");
+  const src = `media/slides/s${pad(i + 1)}.mp4`;
+  el.innerHTML = `
+    <h1><span class="no">${pad(i + 1)}</span><span>${s.t}</span></h1>
+    <div class="body">
+      <div class="vid">
+        <video muted playsinline preload="${i < 2 ? "auto" : "metadata"}" src="${src}"></video>
+        <div class="missing">영상을 불러오지 못했습니다<br><code>${src}</code><br>
+          <span style="font-size:.9em">python transformer_ppt.py 로 렌더링하세요</span></div>
+      </div>
+      <ul class="pts">${s.b.map((x) => `<li>${x}</li>`).join("")}</ul>
+    </div>`;
+  const v = el.querySelector("video");
+  const box = el.querySelector(".vid");
+  v.addEventListener("loadeddata", () => { if (status[i] === "pending") status[i] = "loaded"; });
+  v.addEventListener("playing", () => { status[i] = "playing"; });
+  v.addEventListener("ended", () => { status[i] = "ended"; });   // 끝나면 마지막 프레임 유지 (loop 없음)
+  v.addEventListener("error", () => { status[i] = "error"; box.classList.add("error"); });
+  root.appendChild(el);
+});
+
+let cur = 0;
+function show(i) {
+  i = Math.max(0, Math.min(N - 1, i));
+  const els = root.children;
+  els[cur].classList.remove("active");
+  els[cur].querySelector("video").pause();
+  cur = i;
+  const el = els[cur];
+  el.classList.add("active");
+  const v = el.querySelector("video");
+  if (!el.querySelector(".vid").classList.contains("error")) {
+    try { v.currentTime = 0; } catch (e) {}
+    const p = v.play();
+    if (p && p.catch) p.catch(() => {});
+  }
+  // 다음 슬라이드 미리 로드
+  if (cur + 1 < N) els[cur + 1].querySelector("video").preload = "auto";
+  $("#notes-text").textContent = SLIDES[cur].n;
+  $("#page").textContent = `${cur + 1} / ${N}`;
+  $("#bar > div").style.width = `${((cur + 1) / N) * 100}%`;
+  if (location.hash !== `#${cur + 1}`) history.replaceState(null, "", `#${cur + 1}`);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const k = e.key;
+  if (k === "ArrowRight" || k === " " || k === "PageDown" || k === "Enter") { e.preventDefault(); show(cur + 1); }
+  else if (k === "ArrowLeft" || k === "PageUp" || k === "Backspace") { e.preventDefault(); show(cur - 1); }
+  else if (k === "Home") show(0);
+  else if (k === "End") show(N - 1);
+  else if (k === "s" || k === "S") $("#notes").classList.toggle("open");
+  else if (k === "r" || k === "R") show(cur);
+  else if (k === "f" || k === "F") {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+  }
+});
+window.addEventListener("hashchange", () => {
+  const n = parseInt(location.hash.slice(1), 10);
+  if (n && n - 1 !== cur) show(n - 1);
+});
+
+const start = parseInt(location.hash.slice(1), 10);
+root.children[0].classList.add("active");
+show(start ? start - 1 : 0);
+
+/* ?autotest : 모든 슬라이드를 차례로 띄우며 영상 로드/재생 여부를 검사하고
+   결과를 <pre id="autotest"> 와 document.title 에 기록한다 (헤드리스 검증용). */
+if (new URLSearchParams(location.search).has("autotest")) {
+  const out = document.createElement("pre");
+  out.id = "autotest";
+  out.style.cssText = "position:fixed;top:0;left:0;z-index:9;color:#0f0;background:#000;font-size:12px;margin:0";
+  document.body.appendChild(out);
+  const result = [];
+  (async () => {
+    for (let i = 0; i < N; i++) {
+      show(i);
+      const v = root.children[i].querySelector("video");
+      v.preload = "auto";
+      const t0 = performance.now();
+      while (performance.now() - t0 < 8000) {
+        if (status[i] === "error") break;
+        if (v.readyState >= 2 && v.currentTime > 0.2) break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      const ok = status[i] !== "error" && v.readyState >= 2 && v.currentTime > 0.2;
+      result.push({ slide: i + 1, ok, status: status[i], duration: +(v.duration || 0).toFixed(2),
+                    played: +v.currentTime.toFixed(2), w: v.videoWidth, h: v.videoHeight,
+                    err: v.error ? v.error.code : null });
+    }
+    const fails = result.filter((r) => !r.ok).map((r) => r.slide);
+    out.textContent = "AUTOTEST " + JSON.stringify({ total: N, fails, result });
+    document.title = "AUTOTEST_DONE fails=" + fails.join(",");
+  })();
+}
+</script>
+</body>
+</html>
