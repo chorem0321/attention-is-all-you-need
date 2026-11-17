@@ -38,7 +38,7 @@ class S07PeFrequency(Scene):
         t0 = T("pos 0", 16, AC).next_to(m1[0], DOWN, 0.02)
         t44 = T("pos 44", 16, RED_C).next_to(m1[1], DOWN, 0.02)
         self.play(FadeIn(m1), FadeIn(t0), FadeIn(t44), run_time=0.7)
-        warn = T("한 주파수만 보면 pos 0 ≈ pos 44 (44 ≈ 7바퀴) → 구분 불가", 20, RED_C).next_to(a1, DOWN, 0.05)
+        warn = T("한 주파수만 보면 pos 0 ≈ pos 44 (44 ≈ 7바퀴) → 구분 불가", 20, RED_C).next_to(VGroup(a1, t0, t44), DOWN, 0.15).align_to(a1, LEFT)
         self.play(FadeIn(warn), run_time=0.6)
         self.wait(0.6)
 

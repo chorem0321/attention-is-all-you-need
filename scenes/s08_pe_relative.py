@@ -8,7 +8,7 @@ D = 512
 class S08PeRelative(Scene):
     def construct(self):
         # ── 왼쪽: 파장 = 등비수열 2π → 10000·2π (log 스케일) ─────────
-        hl = T("왜 10000 인가: 파장의 범위", 24, bold=True).move_to([-3.6, 3.35, 0])
+        hl = T("상수 10000의 존재 이유", 24, bold=True).move_to([-3.6, 3.35, 0])
         self.play(FadeIn(hl), run_time=0.5)
         idx = [0, 32, 64, 96, 128, 160, 192, 224, 255]
         lam = [2 * np.pi * 10000 ** (2 * i / D) for i in idx]

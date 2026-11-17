@@ -23,7 +23,7 @@ class S31Summary(Scene):
         if core.width > 13.6:
             core.scale_to_fit_width(13.6)
         self.play(FadeIn(core), run_time=0.8)
-        final = T("Transformer 1팀  ·  감사합니다  ·  Q&A", 34, AC, bold=True).move_to([0, -3.4, 0])
+        final = T("Transformer 1팀", 34, AC, bold=True).move_to([0, -3.4, 0])
         self.play(Write(final), run_time=1.2)
         self.play(Circumscribe(final, color=AC), run_time=1.2)
         pad_to(self, 15)

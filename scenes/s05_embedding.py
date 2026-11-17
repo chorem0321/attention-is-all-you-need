@@ -58,7 +58,7 @@ class S05Embedding(Scene):
         self.wait(0.6)
 
         # 3) 임베딩만으로는 부족
-        lim = M(f"임베딩은 {c('순서', AC)}도 {c('문맥', QC)}도 모른다  →  "
+        lim = M(f"임베딩엔 {c('순서', AC)}, {c('문맥', QC)} 정보 없음  →  "
                 f"{c('② Positional Encoding', AC)} · {c('③ Attention', QC)}", size=26).move_to([0, -3.35, 0])
         self.play(Write(lim), run_time=1.4)
         self.play(Indicate(lim, color=AC, scale_factor=1.03))

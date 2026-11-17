@@ -34,6 +34,5 @@ class S04Pipeline(Scene):
         for i in range(1, 8):
             self.play(dot.animate.move_to(boxes[i][1].get_center()),
                       Indicate(boxes[i][0], color=PIPE[i][2], scale_factor=1.04), run_time=0.45)
-        cap = T("오늘 발표는 이 순서 그대로 따라갑니다", 26, AC).move_to([0, -3.2, 0])
-        self.play(FadeIn(cap, shift=UP * 0.2), Flash(dot, color=AC), run_time=0.9)
+        self.play(Flash(dot, color=AC), run_time=0.9)
         pad_to(self, 17)
